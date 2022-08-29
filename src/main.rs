@@ -35,7 +35,7 @@ enum Commands {
         #[clap(value_parser)]
         fasta_file_path: String,
         kmer_file_path: String,
-        out_prefix: String,
+        out_file_path: String,
     },
 }
 
@@ -125,7 +125,7 @@ fn parse_main(hap1_file_path: &String, hap2_file_path: &String, out_file_path: &
 }
 
 
-fn binning_main(fasta_file_path: &String, kmer_file_path: &String, out_prefix: &String) -> Result<(), Box<dyn Error>> {
+fn binning_main(fasta_file_path: &String, kmer_file_path: &String, out_file_path: &String) -> Result<(), Box<dyn Error>> {
 
     let mut kmer_hap1: HashSet<String> = HashSet::new();
     let mut kmer_hap2: HashSet<String> = HashSet::new();
@@ -150,6 +150,9 @@ fn binning_main(fasta_file_path: &String, kmer_file_path: &String, out_prefix: &
    
 
     let reader = fastq::Reader::from_file(fasta_file_path)?;
+    let write_file = File::create(out_file_path).unwrap();
+    let mut writer = BufWriter::new(&write_file);
+
     for result in reader.records() {
         let record = result?;
 
@@ -171,7 +174,7 @@ fn binning_main(fasta_file_path: &String, kmer_file_path: &String, out_prefix: &
 
         }
 
-        println!("{}\t{}\t{}", record.id(), hap_kmer_count[0], hap_kmer_count[1]);
+        writeln!(&mut writer, "{}\t{}\t{}", record.id(), hap_kmer_count[0], hap_kmer_count[1])?;
 
     }
 
@@ -188,8 +191,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         Commands::Parse { hap1_file_path, hap2_file_path, out_file_path } => {
             result = parse_main(hap1_file_path, hap2_file_path, out_file_path);
         },
-        Commands::Binning { fasta_file_path, kmer_file_path, out_prefix } => {
-            result = binning_main(fasta_file_path, kmer_file_path, out_prefix);
+        Commands::Binning { fasta_file_path, kmer_file_path, out_file_path } => {
+            result = binning_main(fasta_file_path, kmer_file_path, out_file_path);
         },
     }
     
